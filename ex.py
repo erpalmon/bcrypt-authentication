@@ -4,7 +4,7 @@ import sqlite3
 
 app = Flask(__name__)
 
-#Database initialization
+# Database initialization
 DATABASE = "users.db"
 
 def create_users_table():
@@ -15,7 +15,7 @@ def create_users_table():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password BLOB NOT NULL
         )
         """)
         conn.commit()
@@ -23,14 +23,12 @@ def create_users_table():
 #Run database setup
 create_users_table()
 
-
 def get_user(username):
     """Fetches user information from the database by username."""
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         return cursor.fetchone()
-
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -42,12 +40,12 @@ def register():
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
 
-    #Check if the user already exists
+    # Check if the user already exists
     if get_user(username):
         return jsonify({"error": "Username already exists"}), 400
 
     #Hash the password using bcrypt
-    hashed_pw = bcrypt.hashpw(password.decode, bcrypt.gensalt())
+    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 
     #Store the user in the database
     with sqlite3.connect(DATABASE) as conn:
@@ -56,7 +54,6 @@ def register():
         conn.commit()
 
     return jsonify({"message": "User registered successfully"}), 201
-
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -69,10 +66,9 @@ def login():
         return jsonify({"error": "Username and password are required"}), 400
 
     user = get_user(username)
-    if user and bcrypt.checkpw(password.decode(), user[2].decode):
+    if user and bcrypt.checkpw(password.encode(), user[2]):  # Fixed encoding issue
         return jsonify({"message": "Login successful"}), 200
     return jsonify({"message": "Invalid username or password"}), 401
-
 
 @app.route('/reset-password', methods=['POST'])
 def reset_password():
@@ -86,11 +82,11 @@ def reset_password():
         return jsonify({"error": "All fields are required"}), 400
 
     user = get_user(username)
-    if not user or not bcrypt.checkpw(old_password.decode(), user[2].decode):
+    if not user or not bcrypt.checkpw(old_password.encode(), user[2]):  # Fixed encoding issue
         return jsonify({"message": "Invalid username or old password"}), 401
 
     #Hash the new password
-    hashed_new_password = bcrypt.hashpw(new_password.decode(), bcrypt.gensalt())
+    hashed_new_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
 
     #Update password in the database
     with sqlite3.connect(DATABASE) as conn:
@@ -99,7 +95,6 @@ def reset_password():
         conn.commit()
 
     return jsonify({"message": "Password updated successfully"}), 200
-
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -47,7 +47,7 @@ def register():
         return jsonify({"error": "Username already exists"}), 400
 
     #Hash the password using bcrypt
-    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    hashed_pw = bcrypt.hashpw(password.decode, bcrypt.gensalt())
 
     #Store the user in the database
     with sqlite3.connect(DATABASE) as conn:
@@ -69,7 +69,7 @@ def login():
         return jsonify({"error": "Username and password are required"}), 400
 
     user = get_user(username)
-    if user and bcrypt.checkpw(password.encode(), user[2].encode):
+    if user and bcrypt.checkpw(password.decode(), user[2].decode):
         return jsonify({"message": "Login successful"}), 200
     return jsonify({"message": "Invalid username or password"}), 401
 
@@ -86,11 +86,11 @@ def reset_password():
         return jsonify({"error": "All fields are required"}), 400
 
     user = get_user(username)
-    if not user or not bcrypt.checkpw(old_password.encode(), user[2].encode()):
+    if not user or not bcrypt.checkpw(old_password.decode(), user[2].decode):
         return jsonify({"message": "Invalid username or old password"}), 401
 
     #Hash the new password
-    hashed_new_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
+    hashed_new_password = bcrypt.hashpw(new_password.decode(), bcrypt.gensalt())
 
     #Update password in the database
     with sqlite3.connect(DATABASE) as conn:

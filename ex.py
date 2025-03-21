@@ -69,7 +69,7 @@ def login():
         return jsonify({"error": "Username and password are required"}), 400
 
     user = get_user(username)
-    if user and bcrypt.checkpw(password.encode(), user[2].encode()):
+    if user and bcrypt.checkpw(password.encode(), user[2].encode):
         return jsonify({"message": "Login successful"}), 200
     return jsonify({"message": "Invalid username or password"}), 401
 
